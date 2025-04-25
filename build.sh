@@ -18,9 +18,9 @@ if [[ $# -lt 2 && "$operation" != "riscv-testsuite" ]]; then
 fi
 
 function build_bin() {
-    riscv64-unknown-elf-gcc -Wl,-Ttext=0x0 -nostdlib -o "$dirpath/$name" "$filepath" -march=rv32i -mabi=ilp32
+    $RISCV_PREFIX-gcc -Wl,-Ttext=0x0 -nostdlib -o "$dirpath/$name" "$filepath" -march=rv32i -mabi=ilp32
 	  # strips headers off of binary and just leaves code
-    riscv64-unknown-elf-objcopy -O binary "$dirpath/$name" "$dirpath/$name.bin"
+    $RISCV_PREFIX-objcopy -O binary "$dirpath/$name" "$dirpath/$name.bin"
 }
 
 case "$operation" in
@@ -45,10 +45,10 @@ case "$operation" in
           test_base=$(basename -- "$test")
           # echo to stderr
           >&2 echo "Testing $test_base..."
-          riscv64-unknown-elf-objcopy -O binary $test "tests/$test_base.bin"
+          $RISCV_PREFIX-objcopy -O binary $test "tests/$test_base.bin"
 
           # capture the emulators stderr messages to check if program finished successfully (exit-code 0)
-          stderr=$(./target/release/ruscv "tests/$test_base.bin" 2>&1)
+          stderr=$(`echo $CARGO_TARGET_DIR`/release/ruscv "tests/$test_base.bin" 2>&1)
           if [[ "$stderr" != *"Emulated program finished at exit syscall with exit-code: 0"* ]]; then
             let "FAILED += 1"
             FAILED_TESTS="${FAILED_TESTS}\n- ${test_base}"
@@ -64,7 +64,7 @@ case "$operation" in
       fi
       ;;
     objdump)
-        riscv64-unknown-elf-objdump -D "$filepath" -march=rv32i -mabi=ilp32
+        $RISCV_PREFIX-objdump -D "$filepath" -march=rv32i -mabi=ilp32
         ;;
     *)
         echo "Invalid operation: $operation"
